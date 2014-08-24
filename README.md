@@ -20,7 +20,6 @@ Install
 
     * Download [precompiled] for OpenWRT trunk and CPU: ar71xx, brcm63xx,
       brcm47xx, ramips_24kec.
-
     * If you use other CPU or other OpenWRT versions, build yourself:
       cd into [SDK] root, then
 
@@ -29,6 +28,18 @@ Install
             popd
             make menuconfig # select Network/ChinaDNS
             make
+
+* Tomoto
+
+    * Download [Tomato toolchain], build by yourself.
+    * Uncompress the downloaded file to `~/`.
+    * Copy the `brcm` directory under
+      `~/WRT54GL-US_v4.30.11_11/tools/` to `/opt`, then
+
+            export PATH=/opt/brcm/hndtools-mipsel-uclibc/bin/:/opt/brcm/hndtools-mipsel-linux/bin/:$PATH
+            git clone https://github.com/clowwindy/ChinaDNS-C.git
+            cd ChinaDNS-C
+            ./autogen.sh && ./configure --host=mipsel-linux --enable-static && make
 
 * Windows
 
@@ -85,6 +96,7 @@ Advanced
     -h, --help            show this help message and exit
     -l IPLIST_FILE        path to ip blacklist file
     -c CHNROUTE_FILE      path to china route file
+                          if not specified, CHNRoute will be turned off
     -b BIND_ADDR          address that listens, default: 127.0.0.1
     -p BIND_PORT          port that listens, default: 53
     -s DNS                DNS servers to use, default:
@@ -110,13 +122,13 @@ Please visit [Issue Tracker]
 Mailing list: http://groups.google.com/group/shadowsocks
 
 
-[bad IPs]:         https://github.com/clowwindy/ChinaDNS-C/blob/master/iplist.txt
-[Build Status]:    https://img.shields.io/travis/clowwindy/ChinaDNS-C/master.svg?style=flat
-[ChinaDNS]:        https://github.com/clowwindy/ChinaDNS
-[Download]:        https://sourceforge.net/projects/chinadns/files/dist/
-[Issue Tracker]:   https://github.com/clowwindy/ChinaDNS-C/issues?state=open
-[precompiled]:     https://sourceforge.net/projects/chinadns/files/dist/
-[release]:         https://github.com/clowwindy/ChinaDNS-C/releases
-[SDK]:             http://wiki.openwrt.org/doc/howto/obtain.firmware.sdk
-[Travis CI]:       https://travis-ci.org/cj1324/ChinaDNS-OpenWRT.svg?branch=master
-[weird things]:    http://en.wikipedia.org/wiki/Great_Firewall_of_China#Blocking_methods
+[Build Status]:     https://img.shields.io/travis/clowwindy/ChinaDNS-C/master.svg?style=flat
+[ChinaDNS]:         https://github.com/clowwindy/ChinaDNS
+[Download]:         https://sourceforge.net/projects/chinadns/files/dist/
+[Issue Tracker]:    https://github.com/clowwindy/ChinaDNS-C/issues?state=open
+[precompiled]:      https://sourceforge.net/projects/chinadns/files/dist/
+[release]:          https://github.com/clowwindy/ChinaDNS-C/releases
+[SDK]:              http://wiki.openwrt.org/doc/howto/obtain.firmware.sdk
+[Tomato toolchain]: http://downloads.linksysbycisco.com/downloads/WRT54GL_v4.30.11_11_US.tgz
+[Travis CI]:        https://travis-ci.org/cj1324/ChinaDNS-OpenWRT
+[weird things]:     http://en.wikipedia.org/wiki/Great_Firewall_of_China#Blocking_methods

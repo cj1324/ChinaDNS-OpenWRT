@@ -134,6 +134,7 @@ static const char *help_message =
   "  -l IPLIST_FILE        path to ip blacklist file\n"
 #ifdef WITH_CHN_ROUTE
   "  -c CHNROUTE_FILE      path to china route file\n"
+  "                        if not specified, CHNRoute will be turned off\n"
 #endif
   "  -b BIND_ADDR          address that listens, default: 127.0.0.1\n"
   "  -p BIND_PORT          port that listens, default: 53\n"
@@ -159,7 +160,7 @@ static const char *help_message =
   }                                                                 \
 } while (0)
 
-#define LOG(s...) __LOG(stdout, 0, "_", s)
+#define LOG(s...) __LOG(stderr, 0, "_", s)
 #define ERR(s) __LOG(stderr, 1, s, "_")
 #define VERR(s...) __LOG(stderr, 0, "_", s)
 
@@ -433,6 +434,11 @@ static int parse_chnroute() {
   chnroute_list.entries = 0;
   int i = 0;
 
+  if (chnroute_file == NULL) {
+    VERR("CHNROUTE_FILE not specified, CHNRoute is disabled\n");
+    return 0;
+  }
+
   fp = fopen(chnroute_file, "rb");
   if (fp == NULL) {
     ERR("fopen");
@@ -500,7 +506,7 @@ static int test_ip_in_list(struct in_addr ip, const net_list_t *netlist) {
   DLOG("result: %x\n", (ntohl(netlist->nets[l].net.s_addr) ^ ntohl(ip.s_addr)));
   DLOG("mask: %x\n", (UINT32_MAX - netlist->nets[l].mask));
   if ((ntohl(netlist->nets[l].net.s_addr) ^ ntohl(ip.s_addr)) &
-      (UINT32_MAX - netlist->nets[l].mask)) {
+      (UINT32_MAX ^ netlist->nets[l].mask)) {
     return 0;
   }
   return 1;
@@ -508,15 +514,17 @@ static int test_ip_in_list(struct in_addr ip, const net_list_t *netlist) {
 #endif
 
 static int dns_init_sockets() {
-  struct addrinfo addr;
+  struct addrinfo hints;
   struct addrinfo *addr_ip;
   int r;
 
   local_sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
   if (0 != setnonblock(local_sock))
     return -1;
-  memset(&addr, 0, sizeof(addr));
-  if (0 != (r = getaddrinfo(listen_addr, listen_port, &addr, &addr_ip))) {
+  memset(&hints, 0, sizeof(hints));
+  hints.ai_family = AF_INET;
+  hints.ai_socktype = SOCK_DGRAM;
+  if (0 != (r = getaddrinfo(listen_addr, listen_port, &hints, &addr_ip))) {
     VERR("%s:%s:%s\n", gai_strerror(r), listen_addr, listen_port);
     return -1;
   }
@@ -671,7 +679,7 @@ static int should_filter_query(ns_msg msg, struct in_addr dns_addr) {
   void *r;
   // TODO cache result for each dns server
 #ifdef WITH_CHN_ROUTE
-  int dns_is_chn = (dns_servers_len > 1) &&
+  int dns_is_chn = chnroute_file && (dns_servers_len > 1) &&
     test_ip_in_list(dns_addr, &chnroute_list);
 #endif
   rrmax = ns_msg_count(msg, ns_s_an);
@@ -694,7 +702,7 @@ static int should_filter_query(ns_msg msg, struct in_addr dns_addr) {
       if (r)
         return 1;
 #ifdef WITH_CHN_ROUTE
-      if (dns_is_chn) {
+      if (chnroute_file && dns_is_chn) {
         // filter DNS result from chn dns if result is outside chn
         if (!test_ip_in_list(*(struct in_addr *)rd, &chnroute_list))
           return 1;
