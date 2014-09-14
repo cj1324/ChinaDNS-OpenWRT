@@ -150,9 +150,10 @@ static const char *help_message =
   char *time_str = ctime(&now);                                     \
   time_str[strlen(time_str) - 1] = '\0';                            \
   if (t == 0) {                                                     \
-    if (verbose) {                                                  \
+    if (stdout != o || verbose) {                                   \
       fprintf(o, "%s ", time_str);                                  \
-      printf(s);                                                    \
+      fprintf(o, s);                                                \
+      fflush(o);                                                    \
     }                                                               \
   } else if (t == 1) {                                              \
     fprintf(o, "%s %s:%d ", time_str, __FILE__, __LINE__);          \
@@ -249,13 +250,12 @@ int main(int argc, char **argv) {
 
 static int setnonblock(int sock) {
   int flags;
-  flags = fcntl(local_sock, F_GETFL, 0);
-  if(flags == -1) {
+  flags = fcntl(sock, F_GETFL, 0);
+  if (flags == -1) {
     ERR("fcntl");
     return -1;
   }
-  fcntl(local_sock, F_SETFL, flags | O_NONBLOCK);
-  if(flags == -1) {
+  if (-1 == fcntl(sock, F_SETFL, flags | O_NONBLOCK)) {
     ERR("fcntl");
     return -1;
   }
@@ -460,9 +460,16 @@ static int parse_chnroute() {
   }
   while ((read = getline(&line, &len, fp)) != -1) {
     char *sp_pos = strchr(line, '/');
-    *sp_pos = 0;
-    chnroute_list.nets[i].mask = (1 << (32 - atoi(sp_pos + 1))) - 1;
-    inet_aton(line, &chnroute_list.nets[i].net);
+    if (sp_pos) {
+      *sp_pos = 0;
+      chnroute_list.nets[i].mask = (1 << (32 - atoi(sp_pos + 1))) - 1;
+    } else {
+      chnroute_list.nets[i].mask = UINT32_MAX;
+    }
+    if (0 == inet_aton(line, &chnroute_list.nets[i].net)) {
+      VERR("invalid addr %s in %s:%d\n", line, chnroute_file, i + 1);
+      return 1;
+    }
     i++;
   }
   if (line)
@@ -503,7 +510,8 @@ static int test_ip_in_list(struct in_addr ip, const net_list_t *netlist) {
     DLOG("%s, %d\n", inet_ntoa(netlist->nets[m].net),
          netlist->nets[m].mask);
   }
-  DLOG("result: %x\n", (ntohl(netlist->nets[l].net.s_addr) ^ ntohl(ip.s_addr)));
+  DLOG("result: %x\n",
+       (ntohl(netlist->nets[l].net.s_addr) ^ ntohl(ip.s_addr)));
   DLOG("mask: %x\n", (UINT32_MAX - netlist->nets[l].mask));
   if ((ntohl(netlist->nets[l].net.s_addr) ^ ntohl(ip.s_addr)) &
       (UINT32_MAX ^ netlist->nets[l].mask)) {

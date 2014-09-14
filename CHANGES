@@ -1,3 +1,12 @@
+1.1.5 2014-09-08
+- Support single IP address
+- Update IP list and CHNRoute
+
+1.1.4 2014-08-27
+- Fix logs with stderr
+- Fix remote socket not in nonblocking mode
+- Fix restart function in OpenWRT init script
+
 1.1.3 2014-08-11
 - Make CHNRoute an option
 - Output logs to stderr
