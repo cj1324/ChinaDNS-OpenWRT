@@ -1,7 +1,7 @@
 ChinaDNS-C
 ==========
 
-[![Build Status]][Travis CI]
+[Travis CI]
 
 Fix [weird things] with DNS in China.
 This is a port of [ChinaDNS] to C, especially for OpenWRT.
