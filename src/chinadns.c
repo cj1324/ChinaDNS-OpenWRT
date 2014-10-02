@@ -63,7 +63,7 @@ static const char *version = "ChinaDNS";
 #endif
 
 static const char *default_dns_servers =
-  "114.114.114.114,8.8.8.8,208.67.222.222";
+  "114.114.114.114,8.8.8.8,208.67.222.222:443,208.67.222.222";
 static char *dns_servers = NULL;
 static int dns_servers_len;
 static id_addr_t *dns_server_addrs;
@@ -139,7 +139,7 @@ static const char *help_message =
   "  -b BIND_ADDR          address that listens, default: 127.0.0.1\n"
   "  -p BIND_PORT          port that listens, default: 53\n"
   "  -s DNS                DNS servers to use, default:\n"
-  "                        114.114.114.114,208.67.222.222,8.8.8.8\n"
+  "                        114.114.114.114,208.67.222.222:443,8.8.8.8\n"
   "  -v                    verbose logging\n"
   "\n"
   "Online help: <https://github.com/clowwindy/ChinaDNS-C>\n";
@@ -161,7 +161,7 @@ static const char *help_message =
   }                                                                 \
 } while (0)
 
-#define LOG(s...) __LOG(stderr, 0, "_", s)
+#define LOG(s...) __LOG(stdout, 0, "_", s)
 #define ERR(s) __LOG(stderr, 1, s, "_")
 #define VERR(s...) __LOG(stderr, 0, "_", s)
 
@@ -371,8 +371,9 @@ static int parse_ip_list() {
   }
 #endif
   FILE * fp;
+  char line_buf[32];
   char * line = NULL;
-  size_t len = 0;
+  size_t len = sizeof(line_buf);
   ssize_t read;
   ip_list.entries = 0;
   int i = 0;
@@ -383,12 +384,9 @@ static int parse_ip_list() {
     VERR("Can't open ip list: %s\n", ip_list_file);
     return -1;
   }
-  while ((read = getline(&line, &len, fp)) != -1) {
+  while ((line = fgets(line_buf, len, fp))) {
     ip_list.entries++;
   }
-  if (line)
-    free(line);
-  line = NULL;
 
     /* TODO free old ip_list ???? */
   ip_list.ips = calloc(ip_list.entries, sizeof(struct in_addr));
@@ -396,12 +394,15 @@ static int parse_ip_list() {
     VERR("fseek");
     return -1;
   }
-  while ((read = getline(&line, &len, fp)) != -1) {
+  while ((line = fgets(line_buf, len, fp))) {
+    char *sp_pos;
+    sp_pos = strchr(line, '\r');
+    if (sp_pos) *sp_pos = 0;
+    sp_pos = strchr(line, '\n');
+    if (sp_pos) *sp_pos = 0;
     inet_aton(line, &ip_list.ips[i]);
     i++;
   }
-  if (line)
-    free(line);
 
   qsort(ip_list.ips, ip_list.entries, sizeof(struct in_addr), cmp_in_addr);
   fclose(fp);
@@ -428,7 +429,8 @@ static int parse_chnroute() {
 #endif
   FILE * fp;
   char * line = NULL;
-  size_t len = 0;
+  char line_buf[32];
+  size_t len = sizeof(line_buf);
   ssize_t read;
   char net[32];
   chnroute_list.entries = 0;
@@ -445,12 +447,9 @@ static int parse_chnroute() {
     VERR("Can't open chnroute: %s\n", chnroute_file);
     return -1;
   }
-  while ((read = getline(&line, &len, fp)) != -1) {
+  while ((line = fgets(line_buf, len, fp))) {
     chnroute_list.entries++;
   }
-  if (line)
-    free(line);
-  line = NULL;
 
   /* TODO free old chnroute_list ???? */
   chnroute_list.nets = calloc(chnroute_list.entries, sizeof(net_mask_t));
@@ -458,8 +457,13 @@ static int parse_chnroute() {
     VERR("fseek");
     return -1;
   }
-  while ((read = getline(&line, &len, fp)) != -1) {
-    char *sp_pos = strchr(line, '/');
+  while ((line = fgets(line_buf, len, fp))) {
+    char *sp_pos;
+    sp_pos = strchr(line, '\r');
+    if (sp_pos) *sp_pos = 0;
+    sp_pos = strchr(line, '\n');
+    if (sp_pos) *sp_pos = 0;
+    sp_pos = strchr(line, '/');
     if (sp_pos) {
       *sp_pos = 0;
       chnroute_list.nets[i].mask = (1 << (32 - atoi(sp_pos + 1))) - 1;
@@ -472,8 +476,6 @@ static int parse_chnroute() {
     }
     i++;
   }
-  if (line)
-    free(line);
 
   qsort(chnroute_list.nets, chnroute_list.entries, sizeof(net_mask_t),
         cmp_net_mask);

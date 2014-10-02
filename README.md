@@ -11,14 +11,14 @@ Install
 
 * Linux / Unix
 
-    Download a [release].
+    [Download a release].
 
         ./configure && make
         src/chinadns -l iplist.txt -c chnroute.txt
 
 * OpenWRT
 
-    * Download [precompiled] for OpenWRT trunk and CPU: ar71xx, brcm63xx,
+    * [Download precompiled] for OpenWRT trunk and CPU: ar71xx, brcm63xx,
       brcm47xx, ramips_24kec. Open an issue if you think your CPU is a popular
       one but not listed here.
     * If you use other CPU or other OpenWRT versions, build yourself:
@@ -101,7 +101,7 @@ Advanced
     -b BIND_ADDR          address that listens, default: 127.0.0.1
     -p BIND_PORT          port that listens, default: 53
     -s DNS                DNS servers to use, default:
-                          114.114.114.114,208.67.222.222,8.8.8.8
+                          114.114.114.114,208.67.222.222:443,8.8.8.8
     -v                    verbose logging
 
 About chnroute
@@ -123,7 +123,7 @@ Please visit [Issue Tracker]
 Mailing list: http://groups.google.com/group/shadowsocks
 
 
-[Build Status]:     https://img.shields.io/travis/clowwindy/ChinaDNS-C/master.svg?style=flat
+[Travis CI]:        https://travis-ci.org/cj1324/ChinaDNS-OpenWRT
 [ChinaDNS]:         https://github.com/clowwindy/ChinaDNS
 [Download]:         https://sourceforge.net/projects/chinadns/files/dist/
 [Issue Tracker]:    https://github.com/clowwindy/ChinaDNS-C/issues?state=open
@@ -131,5 +131,4 @@ Mailing list: http://groups.google.com/group/shadowsocks
 [release]:          https://github.com/clowwindy/ChinaDNS-C/releases
 [SDK]:              http://wiki.openwrt.org/doc/howto/obtain.firmware.sdk
 [Tomato toolchain]: http://downloads.linksysbycisco.com/downloads/WRT54GL_v4.30.11_11_US.tgz
-[Travis CI]:        https://travis-ci.org/cj1324/ChinaDNS-OpenWRT
 [weird things]:     http://en.wikipedia.org/wiki/Great_Firewall_of_China#Blocking_methods
